@@ -1,0 +1,34 @@
+<rdf:RDF xmlns="http://example.org/tech#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+<owl:Ontology rdf:about="http://example.org/tech"/>
+
+<owl:Class rdf:ID="Person"/>
+  <owl:Class rdf:ID="Organization"/>
+  <owl:Class rdf:ID="Product"/>
+  <owl:Class rdf:ID="Place"/>
+  <owl:Class rdf:ID="Date"/>
+
+  <owl:ObjectProperty rdf:ID="CEO_OF">
+    <rdfs:domain rdf:resource="#Person"/>
+    <rdfs:range rdf:resource="#Organization"/>
+  </owl:ObjectProperty>
+
+  <owl:ObjectProperty rdf:ID="FOUNDER_OF">
+    <rdfs:domain rdf:resource="#Person"/>
+    <rdfs:range rdf:resource="#Organization"/>
+  </owl:ObjectProperty>
+
+  <owl:ObjectProperty rdf:ID="MANUFACTURES">
+    <rdfs:domain rdf:resource="#Organization"/>
+    <rdfs:range rdf:resource="#Product"/>
+  </owl:ObjectProperty>
+
+  <owl:ObjectProperty rdf:ID="LAUNCHED"/>
+  <owl:ObjectProperty rdf:ID="MISSION_TARGET"/>
+  <owl:ObjectProperty rdf:ID="PRODUCTION_START"/>
+  <owl:ObjectProperty rdf:ID="DELIVERY_START"/>
+
+</rdf:RDF>
