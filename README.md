@@ -94,7 +94,7 @@ After processing, all validated relations are loaded into Neo4j and visualized a
 
 <!-- drag and drop your graph screenshot here -->
 <div align="center">
-  <img src="docs/images/graph_viz.png" width="85%" alt="Knowledge Graph Visualization"/>
+  <img src="docs/images/image.png" width="85%" alt="Knowledge Graph Visualization"/>
   <br/>
   <sub><i>Knowledge graph built from 300K+ telecom conversations. Nodes = typed entities, edges = LLM-validated relations.</i></sub>
 </div>
@@ -243,11 +243,11 @@ The chatbot answers questions by querying the knowledge graph and grounding ever
 
 <!-- drag and drop your Q&A screenshots here -->
 <div align="center">
-  <img src="docs/images/qa1.png" width="48%"/>
-  <img src="docs/images/qa2.png" width="48%"/>
+  <img src="docs/images/image2.png" width="48%"/>
+  <img src="docs/images/image3.png" width="48%"/>
 </div>
 <div align="center" style="margin-top:8px">
-  <img src="docs/images/qa3.png" width="60%"/>
+  <img src="docs/images/image4.png" width="60%"/>
 </div>
 
 <br/>
