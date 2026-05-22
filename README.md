@@ -26,11 +26,11 @@ a full NLP pipeline: cleaning → NER → relation extraction → LLM validation
 
 Most chatbot projects stop at fine-tuning a model on FAQ pairs. This one goes further:
 
-- **Structured knowledge extraction** — not just embeddings, but typed entities and labeled relations
-- **LLM-in-the-loop validation** — Llama 3.1 reviews every extracted triple before it enters the graph
+- **Structured knowledge extraction** — 6 typed entity types and labeled relations, not just opaque embeddings
+- **LLM-in-the-loop validation** — Llama 3.1 reviews every extracted triple; only those passing `valid=True` AND `confidence ≥ 0.90` enter the graph
 - **Faithful uncertainty** — the bot says *"I don't know"* when graph evidence is missing, instead of hallucinating
 - **Formal OWL ontology** — the knowledge graph has a semantic schema, not just ad-hoc nodes
-- **3-source data fusion** — three heterogeneous telecom datasets unified into one coherent graph
+- **3-source data fusion** — ~300K records from three heterogeneous telecom datasets unified into one coherent graph
 
 ---
 
@@ -92,7 +92,6 @@ Most chatbot projects stop at fine-tuning a model on FAQ pairs. This one goes fu
 
 After processing, all validated relations are loaded into Neo4j and visualized as a directed graph. Central hubs — **CUSTOMER**, **TICKET**, **ISSUE**, **ACCOUNT** — connect hundreds of real-world entities extracted from telecom support conversations.
 
-<!-- drag and drop your graph screenshot here -->
 <div align="center">
   <img src="docs/images/image.png" width="85%" alt="Knowledge Graph Visualization"/>
   <br/>
@@ -118,15 +117,21 @@ A stratified 100K sample of Talkmap was used for development; the full 200K is a
 
 ### Stage 1 — Data Exploration (`2_explore_data.ipynb`)
 
-Systematic noise profiling across all three datasets before any processing:
+Systematic noise profiling across all three datasets revealed dataset-specific quirks that drove custom cleaning rules per source:
 
-- Detected and quantified: URLs, emails, emojis, repeated punctuation, hashtags, @mentions
-- Revealed dataset-specific quirks that drove custom cleaning rules per source
-- Built reusable `filter_by_pattern()` utility for quick pattern-based inspection
+| Noise type | Talkmap | Comcast | Bitext |
+|---|---|---|---|
+| URLs / links | ✅ frequent | rare | rare |
+| Emojis | ✅ frequent | rare | none |
+| Repeated tokens (*"to to to"*) | ✅ frequent | rare | none |
+| Parenthetical asides (*"(to self)"*) | ✅ frequent | none | none |
+| Non-ASCII garbage | ✅ frequent | occasional | rare |
+
+A reusable `filter_by_pattern()` utility was built for fast regex-based inspection across millions of rows.
 
 ### Stage 2 — Preprocessing (`3_preprocessing.ipynb`)
 
-A custom multi-step text cleaning pipeline built from scratch — no off-the-shelf cleaner used:
+A custom 9-step text cleaning pipeline built from scratch — no off-the-shelf cleaner used:
 
 ```python
 clean_pipeline = [
@@ -241,7 +246,6 @@ The `Answer ONLY using these facts` constraint is what produces faithful, non-ha
 
 The chatbot answers questions by querying the knowledge graph and grounding every response in real extracted facts — no hallucination, no guessing.
 
-<!-- drag and drop your Q&A screenshots here -->
 <div align="center">
   <img src="docs/images/image2.png" width="48%"/>
   <img src="docs/images/image3.png" width="48%"/>
@@ -260,7 +264,7 @@ The chatbot answers questions by querying the knowledge graph and grounding ever
 | *"How are tickets typically reported?"* | Via email |
 | *"What patterns exist in issue reports and devices used?"* | Samsung Galaxy S21 in all instances; Netflix streaming issues recur across locations |
 
-> **Faithful uncertainty in action:** when the graph lacks sufficient evidence, the bot explicitly responds *"I don't know. The facts only mention ACCOUNT -[HAS_BILLING_AMOUNT]→ 500..."* — this is a deliberate design choice. A system that admits uncertainty is more reliable in production than one that confidently hallucinates.
+> **Faithful uncertainty in action:** when the graph lacks sufficient evidence, the bot explicitly responds *"I don't know. The facts only mention ACCOUNT -[HAS_BILLING_AMOUNT]→ 500..."* — a deliberate design choice. A system that admits uncertainty is more reliable in production than one that confidently hallucinates.
 
 ---
 
@@ -272,7 +276,7 @@ The project includes a formal **OWL ontology** (`ontology.owl`) that defines the
 - **Object Properties**: `hasIssue`, `requestedAction`, `usesService`, `reportedBy`, `escalatedTo`
 - **Data Properties**: confidence scores, timestamps, source dataset labels
 
-This ensures the graph is semantically consistent, extensible, and compatible with other knowledge systems — a level of rigor rarely seen in student or research projects.
+The ontology ensures the graph is semantically consistent, extensible, and compatible with other knowledge systems.
 
 ---
 
@@ -345,14 +349,15 @@ Run notebooks in order:
 
 ---
 
-## 🔮 Future Work
+## 🔮 Roadmap
 
-- [ ] Fine-tune NER on domain-annotated telecom data for higher entity recall
-- [ ] Add community detection (Louvain algorithm) to surface issue clusters
-- [ ] Build a Streamlit or Gradio interactive demo
-- [ ] Benchmark GraphRAG vs vanilla vector RAG on a held-out Q&A evaluation set
-- [ ] Extend ontology with temporal relations (e.g. *issue resolved on date*)
-- [ ] Add graph embeddings (Node2Vec) for similarity-based retrieval
+The pipeline is production-ready for static knowledge graphs. Three directions for extension:
+
+- **Domain adaptation** — fine-tune NER on annotated telecom data for higher entity recall
+- **Temporal reasoning** — extend ontology with time-indexed relations (e.g. *issue resolved on date*)
+- **Retrieval benchmarking** — head-to-head GraphRAG vs vanilla vector RAG on a held-out Q&A evaluation set
+- **Graph intelligence** — community detection (Louvain) to surface issue clusters, plus Node2Vec embeddings for similarity-based retrieval
+- **Interactive demo** — Streamlit or Gradio frontend so non-technical users can query the graph
 
 ---
 
@@ -364,10 +369,23 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**Built by [Houda](https://github.com/houdhoudGH)**
-*· Master 2 Data Science & NLP · AI Engineer ·*
+### 🎓 About This Project
 
-<br/>
+This project explores **knowledge graphs**, **LLM-in-the-loop validation**, and **faithful RAG** —
+demonstrating how structured extraction can produce chatbots that *know what they don't know*.
+
+<br>
+
+**Made with 💜 by Gheffari Nour El Houda**
+
+<sub>Master 2 Data Science & NLP · AI Engineer</sub>
+
+<br>
+
 <sub>spaCy · Neo4j · LangChain · HuggingFace · Llama 3.1 · NetworkX · OWL</sub>
+
+<br>
+
+<sub>If you found this useful, consider giving the repo a ⭐</sub>
 
 </div>
