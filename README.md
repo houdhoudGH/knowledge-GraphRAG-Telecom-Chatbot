@@ -1,123 +1,152 @@
 <div align="center">
 
-<h1>🕸️ Telecom GraphRAG</h1>
+# 🕸️ Telecom GraphRAG
 
-<p><strong>End-to-End Knowledge Graph Pipeline for Telecom Customer Support Intelligence</strong></p>
+### *A faithful knowledge-graph chatbot for telecom customer support*
+
+From **300,000+ raw conversations** → typed entities → LLM-validated triples → Neo4j knowledge graph → grounded chatbot answers.
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![spaCy](https://img.shields.io/badge/spaCy-NLP-09A3D5?style=flat-square)](https://spacy.io)
 [![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-008CC1?style=flat-square&logo=neo4j&logoColor=white)](https://neo4j.com)
 [![LangChain](https://img.shields.io/badge/LangChain-LLM_Ops-1C3C3C?style=flat-square)](https://langchain.com)
-[![HuggingFace](https://img.shields.io/badge/HuggingFace-Llama_3.1-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co)
+[![Llama 3.1](https://img.shields.io/badge/Llama_3.1-8B_Instruct-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Demo-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 <br/>
 
-<p>
-From <strong>300,000+ raw telecom conversations</strong> to a knowledge graph-powered chatbot —<br/>
-a full NLP pipeline: cleaning → NER → relation extraction → LLM validation → Neo4j → GraphRAG.
-</p>
+<img src="docs/images/graph_clean.png" width="92%" alt="Telecom knowledge graph"/>
+
+<sub><i>Knowledge graph extracted from 300K+ telecom support conversations.<br/>
+Each node is a typed entity; each edge is an LLM-validated relation with confidence ≥ 0.90.</i></sub>
 
 </div>
 
 ---
 
-## 🌟 What Makes This Project Different
+## ✨ Why This Project Stands Out
 
-Most chatbot projects stop at fine-tuning a model on FAQ pairs. This one goes further:
+Most chatbot projects fine-tune an LLM on FAQ pairs and call it a day. This one does something genuinely different — it builds a **structured semantic graph** from raw conversations, then uses that graph as the only source of truth the chatbot is allowed to consult.
 
-- **Structured knowledge extraction** — 6 typed entity types and labeled relations, not just opaque embeddings
-- **LLM-in-the-loop validation** — Llama 3.1 reviews every extracted triple; only those passing `valid=True` AND `confidence ≥ 0.90` enter the graph
-- **Faithful uncertainty** — the bot says *"I don't know"* when graph evidence is missing, instead of hallucinating
-- **Formal OWL ontology** — the knowledge graph has a semantic schema, not just ad-hoc nodes
-- **3-source data fusion** — ~300K records from three heterogeneous telecom datasets unified into one coherent graph
+| | Most RAG projects | **This project** |
+|---|---|---|
+| Knowledge representation | Opaque embeddings | **Typed nodes + labeled relations** |
+| Provenance | Lost after chunking | **Every fact traces to a source sentence** |
+| Hallucination handling | "Best-effort" answers | **Explicit *"I don't know"* when evidence is missing** |
+| Validation | None | **LLM-in-the-loop reviews every triple before insertion** |
+| Schema | Ad-hoc | **Formal OWL ontology** |
+| Data sources | Single dataset | **3 heterogeneous telecom datasets unified** |
+
+The novelty isn't any single component — it's the **end-to-end discipline**: every triple is typed, validated, scored, and traceable to the sentence it came from.
 
 ---
 
-## 🗺️ Pipeline at a Glance
+## 🎬 Live Demo
+
+A local Streamlit app loads the validated triples and lets you query the graph through a chat interface. Source triples are shown below each answer so you can verify the grounding yourself.
+
+<div align="center">
+  <img src="docs/images/demo_landing.png" width="92%" alt="Streamlit app — landing page"/>
+  <br/>
+  <sub><i>Project pipeline in the sidebar; suggested questions in the main panel.</i></sub>
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="docs/images/demo_device.png" width="92%" alt="Aggregation query — device frequency"/>
+  <br/>
+  <sub><i><b>Aggregation</b> — the system counts device co-occurrences across the graph and returns the most frequent, with raw counts visible as source evidence.</i></sub>
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="docs/images/demo_patterns.png" width="92%" alt="Pattern detection across triples"/>
+  <br/>
+  <sub><i><b>Analytical reasoning</b> — the system synthesizes patterns across multiple retrieved triples (device concentration, recurring use case, geography).</i></sub>
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="docs/images/demo_escalation.png" width="92%" alt="Long-form reasoning over the graph"/>
+  <br/>
+  <sub><i><b>Long-form reasoning</b> — multi-step process explained from graph evidence, with explicit acknowledgement of what the schema does not capture.</i></sub>
+</div>
+
+> ⭐ **Faithful uncertainty by design.** When the graph lacks the evidence to answer a question, the chatbot says *"I don't know"* and lists the facts it actually has — instead of confidently hallucinating. This is the single most important property of the system.
+
+---
+
+## 🗺️ The Pipeline
+
+Six stages, each fully reproducible from the notebooks in this repo.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   300K+ Telecom Conversations                   │
-│         (Talkmap 200K · Comcast Complaints · Bitext 27K)        │
-└─────────────────────────┬───────────────────────────────────────┘
-                          │
+┌───────────────────────────────────────────────────────────────┐
+│                300K+ Telecom Conversations                    │
+│       (Talkmap 200K · Comcast 5K · Bitext 27K)                │
+└─────────────────────────┬─────────────────────────────────────┘
                           ▼
               ┌───────────────────────┐
-              │   1. Preprocessing    │  Emoji removal, URL masking,
-              │                       │  noise cleaning, deduplication,
-              │                       │  repeated token collapse
+              │  1. Preprocessing     │  9-step custom cleaner
+              │                       │  emoji · url · noise · dedup
               └───────────┬───────────┘
-                          │
                           ▼
               ┌───────────────────────┐
-              │  2. NER Extraction    │  spaCy en_core_web_lg +
-              │                       │  custom EntityRuler patterns +
-              │                       │  regex (ACCOUNT_ID, PHONE)
-              │                       │  → 6 entity types
+              │  2. NER               │  spaCy en_core_web_lg
+              │                       │  + EntityRuler + regex
+              │                       │  → 6 typed entities
               └───────────┬───────────┘
-                          │
                           ▼
               ┌───────────────────────┐
-              │ 3. Relation Extraction│  Dependency-based rules
-              │                       │  → (subject, relation, object)
-              │                       │  triples with confidence scores
+              │  3. Relations         │  dependency-parse rules
+              │                       │  → (s, r, o) + confidence
               └───────────┬───────────┘
-                          │
                           ▼
               ┌───────────────────────┐
-              │  4. LLM Validation    │  Llama-3.1-8B-Instruct
-              │                       │  validates, fixes, normalizes,
-              │                       │  and rejects bad triples
+              │  4. LLM Validation  ★ │  Llama-3.1-8B reviewer
+              │                       │  validate · fix · reject
+              │                       │  → conf ≥ 0.90 gate
               └───────────┬───────────┘
-                          │
                           ▼
               ┌───────────────────────┐
-              │   5. Neo4j Graph      │  Typed nodes + weighted edges
-              │                       │  loaded into Neo4j Aura cloud
-              │                       │  → queryable knowledge graph
+              │  5. Neo4j Graph       │  typed nodes + weighted
+              │                       │  edges in Neo4j Aura
               └───────────┬───────────┘
-                          │
                           ▼
               ┌───────────────────────┐
-              │   6. GraphRAG Chat    │  LangChain chain queries graph
-              │                       │  → injects facts into prompt
-              │                       │  → LLM generates grounded answer
+              │  6. GraphRAG Chat     │  Cypher retrieval +
+              │                       │  grounded LLM answer
               └───────────────────────┘
 ```
 
----
-
-## 📊 The Knowledge Graph
-
-After processing, all validated relations are loaded into Neo4j and visualized as a directed graph. Central hubs — **CUSTOMER**, **TICKET**, **ISSUE**, **ACCOUNT** — connect hundreds of real-world entities extracted from telecom support conversations.
-
-<div align="center">
-  <img src="docs/images/image.png" width="85%" alt="Knowledge Graph Visualization"/>
-  <br/>
-  <sub><i>Knowledge graph built from 300K+ telecom conversations. Nodes = typed entities, edges = LLM-validated relations.</i></sub>
-</div>
+**★ The LLM-in-the-loop validation stage** is the project's novel contribution — every extracted triple is reviewed by Llama-3.1 before insertion. The validator can fix, normalize, or reject triples, and only those passing a strict 0.90 confidence gate make it into the final graph.
 
 ---
 
-## 🗂️ Datasets
+## 🗂️ The Data
 
-| Dataset | Records | Type | Key Fields |
+Three heterogeneous telecom datasets unified into one coherent corpus:
+
+| Dataset | Records | Type | Content |
 |---|---|---|---|
-| Talkmap Telecom | 200,000 | Multi-turn dialogues | conversation text, timestamps |
-| Comcast Complaints | ~5,000 | Customer complaints | complaint text, categories |
-| Bitext Customer Q&A | 27,000 | Intent-labeled responses | instruction, response, intent, category |
+| **Talkmap Telecom** | 200,000 | Multi-turn dialogues | Customer-agent conversation transcripts |
+| **Comcast Complaints** | ~5,000 | Free-form text | Customer complaints with category labels |
+| **Bitext Customer Q&A** | 27,000 | Intent-labeled pairs | Instruction · response · intent · category |
 | **Total** | **~300K** | **Mixed** | |
 
-A stratified 100K sample of Talkmap was used for development; the full 200K is available for production runs.
+A stratified 100K sample of Talkmap was used during development; the full 200K is available for production runs.
 
 ---
 
-## 🔬 Stage-by-Stage Breakdown
+## 🔬 Stage-by-Stage
 
-### Stage 1 — Data Exploration (`2_explore_data.ipynb`)
+### 1️⃣ Data Exploration — `2_explore_data.ipynb`
 
-Systematic noise profiling across all three datasets revealed dataset-specific quirks that drove custom cleaning rules per source:
+Systematic noise profiling across all three datasets revealed dataset-specific quirks that drove custom cleaning per source:
 
 | Noise type | Talkmap | Comcast | Bitext |
 |---|---|---|---|
@@ -129,27 +158,27 @@ Systematic noise profiling across all three datasets revealed dataset-specific q
 
 A reusable `filter_by_pattern()` utility was built for fast regex-based inspection across millions of rows.
 
-### Stage 2 — Preprocessing (`3_preprocessing.ipynb`)
+### 2️⃣ Preprocessing — `3_preprocessing.ipynb`
 
-A custom 9-step text cleaning pipeline built from scratch — no off-the-shelf cleaner used:
+Custom 9-step text cleaner built from scratch — no off-the-shelf cleaner used:
 
 ```python
 clean_pipeline = [
-    remove_emojis,              # Strip unicode emoji characters
-    remove_urls,                # Remove http/www links
-    mask_emails,                # Replace emails with [EMAIL] token
-    remove_mentions_hashtags,   # Strip @user and #tag
-    remove_parenthetical_noise, # Remove "(To self)", "(Thumbs up)" etc.
-    remove_repeated_tokens,     # Collapse "to to to" → "to"
+    remove_emojis,              # Unicode emoji stripping
+    remove_urls,                # http/www links
+    mask_emails,                # → [EMAIL] token
+    remove_mentions_hashtags,   # @user, #tag
+    remove_parenthetical_noise, # "(To self)", "(Thumbs up)"
+    remove_repeated_tokens,     # "to to to" → "to"
     normalize_punctuation,      # "!!!" → "!"
-    remove_garbage_symbols,     # Non-ASCII noise
-    clean_whitespace            # Normalize spaces and newlines
+    remove_garbage_symbols,     # non-ASCII noise
+    clean_whitespace,           # canonical spacing
 ]
 ```
 
-All three sources unified into one clean CSV for all downstream stages.
+All three sources unified into one clean CSV.
 
-### Stage 3 — Named Entity Recognition (`4_ner_extraction.ipynb`)
+### 3️⃣ Named Entity Recognition — `4_ner_extraction.ipynb`
 
 Hybrid NER combining spaCy's statistical model with hand-crafted deterministic rules:
 
@@ -157,16 +186,16 @@ Hybrid NER combining spaCy's statistical model with hand-crafted deterministic r
 |---|---|---|
 | `SERVICE` | *data plan, broadband, roaming, voicemail* | EntityRuler patterns |
 | `PRODUCT` | *router, SIM card, iPhone, Android, modem* | EntityRuler patterns |
-| `ISSUE` | *no signal, billing issue, network outage, dropped calls* | EntityRuler patterns |
+| `ISSUE` | *no signal, billing issue, network outage* | EntityRuler patterns |
 | `ACTION` | *refund, reset, escalate, cancel, upgrade* | EntityRuler patterns |
 | `ACCOUNT_ID` | *AB-12345, JKL87654321* | Regex `[A-Z]{2,5}-?\d{4,}` |
 | `PHONE_NUMBER` | *+1-800-XXX-XXXX* | Regex (international formats) |
 
-GPU acceleration via `thinc.prefer_gpu()` for efficient batch processing at scale.
+GPU acceleration via `thinc.prefer_gpu()` for efficient batch processing.
 
-### Stage 4 — Relation Extraction (`5_relation_extraction.ipynb`)
+### 4️⃣ Relation Extraction — `5_relation_extraction.ipynb`
 
-Dependency-parse-based rules extract structured triples from every sentence:
+Dependency-parse rules extract structured, fully-traceable triples:
 
 ```json
 {
@@ -182,17 +211,13 @@ Dependency-parse-based rules extract structured triples from every sentence:
 }
 ```
 
-Every triple is fully traceable: typed entities, relation label, source sentence, confidence score, and dataset origin.
+Typed entities, relation label, source sentence, confidence score, dataset origin — every triple is fully auditable.
 
-### Stage 5 — LLM Validation (`6_relation_cleaning.ipynb`)
+### 5️⃣ LLM Validation — `6_relation_cleaning.ipynb` ⭐
 
-The most novel stage — an **LLM-in-the-loop cleaning pipeline** using Llama-3.1-8B-Instruct:
+The novel stage. Every triple gets reviewed by Llama-3.1-8B-Instruct via LangChain:
 
-**Step 1 — Deduplication:** triples deduplicated by `(subject, relation, object)`, keeping the highest-confidence instance.
-
-**Step 2 — LLM review via LangChain:** each triple is passed to Llama with a structured prompt:
-
-```
+```text
 You are a knowledge graph validation assistant.
 Your task:
 - Decide if the relation is correct
@@ -203,13 +228,11 @@ Your task:
 Return ONLY valid JSON.
 ```
 
-**Step 3 — Quality gate:** only triples where `valid=True` AND `confidence ≥ 0.90` enter the final graph.
+**Quality gate:** only triples where `valid=True` AND `confidence ≥ 0.90` survive. The validator catches errors that the rule-based extractor cannot — semantic nonsense, mis-typed arguments, and ambiguous references.
 
-Built with LangChain `LLMChain` + `SequentialChain` + `PromptTemplate`.
+### 6️⃣ Neo4j Knowledge Graph — `7_neo4j_RAG.ipynb`
 
-### Stage 6 — Neo4j Knowledge Graph (`7_neo4j_RAG.ipynb`)
-
-Validated triples loaded into **Neo4j Aura** with typed node labels and relationship weights:
+Validated triples loaded into **Neo4j Aura** with typed nodes and weighted edges:
 
 ```cypher
 MERGE (a:Entity {name: $subject})
@@ -217,15 +240,15 @@ MERGE (b:Entity {name: $object})
 MERGE (a)-[rel:REPORTED {confidence: $conf}]->(b)
 ```
 
-Graph exported to NetworkX for local visualization and statistical analysis.
+Graph also exported to NetworkX for local statistical analysis and visualization.
 
-### Stage 7 — GraphRAG Chatbot
+### 7️⃣ GraphRAG Chatbot — `7_neo4j_RAG.ipynb`
 
 A three-step retrieval-augmented generation chain:
 
-1. **Question → Cypher query** — natural language mapped to graph traversal
-2. **Graph → Context** — Neo4j returns relevant `(subject)-[relation]->(object)` triples as facts
-3. **Context → Answer** — LLM generates a response grounded strictly in graph evidence
+1. **Question → Cypher** — natural language mapped to graph traversal
+2. **Graph → Context** — Neo4j returns relevant `(subject)-[relation]→(object)` triples
+3. **Context → Answer** — LLM generates a response grounded *strictly* in graph evidence
 
 ```python
 prompt = f"""
@@ -238,72 +261,52 @@ Question: {question}
 """
 ```
 
-The `Answer ONLY using these facts` constraint is what produces faithful, non-hallucinated responses.
+The `Answer ONLY using these facts` constraint is what produces faithful, non-hallucinated responses — including the explicit *"I don't know"* when the graph lacks evidence.
 
 ---
 
-## 💬 GraphRAG in Action
+## 🧠 OWL Ontology
 
-The chatbot answers questions by querying the knowledge graph and grounding every response in real extracted facts — no hallucination, no guessing.
+The graph is backed by a formal **OWL ontology** (`ontology.owl`) that defines its semantic structure:
 
-<div align="center">
-  <img src="docs/images/image2.png" width="48%"/>
-  <img src="docs/images/image3.png" width="48%"/>
-</div>
-<div align="center" style="margin-top:8px">
-  <img src="docs/images/image4.png" width="60%"/>
-</div>
+- **Classes:** `Customer`, `Service`, `Issue`, `Device`, `Action`, `Account`, `Ticket`, `Agent`, `Team`
+- **Object Properties:** `hasIssue`, `requestedAction`, `usesService`, `reportedBy`, `escalatedTo`, `memberOf`
+- **Data Properties:** confidence scores, timestamps, source dataset, evidence text
 
-<br/>
-
-| Question | Answer |
-|---|---|
-| *"With what device are issues most frequently reported?"* | Samsung Galaxy S21 (3 reports) |
-| *"Who handles escalated tickets for Union Mobile?"* | Jettie, Paulo, and one unnamed agent |
-| *"Which team is responsible when tickets are escalated?"* | Union Mobile |
-| *"How are tickets typically reported?"* | Via email |
-| *"What patterns exist in issue reports and devices used?"* | Samsung Galaxy S21 in all instances; Netflix streaming issues recur across locations |
-
-> **Faithful uncertainty in action:** when the graph lacks sufficient evidence, the bot explicitly responds *"I don't know. The facts only mention ACCOUNT -[HAS_BILLING_AMOUNT]→ 500..."* — a deliberate design choice. A system that admits uncertainty is more reliable in production than one that confidently hallucinates.
+The ontology ensures the graph is semantically consistent, extensible, and interoperable with other knowledge systems.
 
 ---
 
-## 🧠 Knowledge Graph Ontology
+## 🚀 Quick Start
 
-The project includes a formal **OWL ontology** (`ontology.owl`) that defines the semantic structure of the graph:
+### Run the demo locally
 
-- **Classes**: `Customer`, `Service`, `Issue`, `Device`, `Action`, `Account`, `Ticket`
-- **Object Properties**: `hasIssue`, `requestedAction`, `usesService`, `reportedBy`, `escalatedTo`
-- **Data Properties**: confidence scores, timestamps, source dataset labels
+```bash
+git clone https://github.com/houdhoudGH/Customer_Service_ChatBot.git
+cd Customer_Service_ChatBot
 
-The ontology ensures the graph is semantically consistent, extensible, and compatible with other knowledge systems.
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
----
-
-## 📁 Repository Structure
-
+pip install -r requirements.txt
+streamlit run app.py
 ```
-telecom-graphrag/
-├── data/
-│   ├── raw/                         # Original datasets (git-ignored)
-│   └── processed/
-│       ├── all_clean_for_ner.csv
-│       ├── relations_extraction.csv
-│       └── relations_llm_validated.csv
-├── notebooks/
-│   ├── 1_load_data.ipynb            # Multi-source ingestion + stratified sampling
-│   ├── 2_explore_data.ipynb         # EDA + noise profiling across 3 datasets
-│   ├── 3_preprocessing.ipynb        # 9-step custom cleaning pipeline
-│   ├── 4_ner_extraction.ipynb       # Hybrid NER (spaCy + EntityRuler + regex)
-│   ├── 5_relation_extraction.ipynb  # Triple extraction with typed confidence scores
-│   ├── 6_relation_cleaning.ipynb    # Dedup + Llama-3.1 LLM validation loop
-│   ├── 7_neo4j_RAG.ipynb            # Graph loading + GraphRAG chatbot v1
-│   └── 8_neo4j_RAG.ipynb            # GraphRAG chatbot v2 (improved querying)
-├── docs/
-│   └── images/                      # Screenshots used in this README
-├── ontology.owl                     # Formal OWL knowledge graph ontology
-└── requirements.txt
+
+The Streamlit demo runs without any external dependencies — no Neo4j credentials or LLM tokens required. It replays the question/answer pairs from the original Neo4j Aura pipeline.
+
+### Reproduce the full pipeline
+
+To run the full extraction and validation chain against your own data:
+
+```bash
+export NEO4J_URI="neo4j+s://your-instance.databases.neo4j.io"
+export NEO4J_USERNAME="neo4j"
+export NEO4J_PASSWORD="your-password"
+export HUGGINGFACEHUB_API_TOKEN="hf_..."
 ```
+
+Run the notebooks in order:
+`1_load_data` → `2_explore_data` → `3_preprocessing` → `4_ner_extraction` → `5_relation_extraction` → `6_relation_cleaning` → `7_neo4j_RAG`
 
 ---
 
@@ -312,52 +315,53 @@ telecom-graphrag/
 | Layer | Technology |
 |---|---|
 | **NLP & NER** | spaCy `en_core_web_lg`, EntityRuler, custom regex |
-| **LLM Validation** | Llama-3.1-8B-Instruct via HuggingFace Inference API |
+| **LLM Validation** | Llama-3.1-8B-Instruct (HuggingFace Inference API) |
 | **LLM Orchestration** | LangChain (`LLMChain`, `SequentialChain`, `PromptTemplate`) |
-| **Graph Database** | Neo4j Aura (cloud) + `neo4j` Python driver |
+| **Graph Database** | Neo4j Aura + `neo4j` Python driver |
 | **Graph Analysis** | NetworkX, Matplotlib |
 | **Data Processing** | Pandas, NumPy |
 | **GPU Acceleration** | CUDA via thinc / PyTorch |
 | **Ontology** | OWL / Protégé |
-| **Visualization** | Vis.js, Tom-Select |
+| **Demo UI** | Streamlit |
 
 ---
 
-## 🚀 Getting Started
+## 📁 Repository Structure
 
-```bash
-git clone https://github.com/houdhoudGH/telecom-graphrag.git
-cd telecom-graphrag
-
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
-pip install -r requirements.txt
 ```
-
-Set environment variables before running the notebooks:
-
-```bash
-export NEO4J_URI="neo4j+s://your-instance.databases.neo4j.io"
-export NEO4J_USERNAME="neo4j"
-export NEO4J_PASSWORD="your-password"
-export HUGGINGFACEHUB_API_TOKEN="your-hf-token"
+Customer_Service_ChatBot/
+├── app.py                                # Streamlit demo
+├── ontology.owl                          # Formal OWL knowledge graph ontology
+├── requirements.txt
+├── data/
+│   ├── raw/                              # Original datasets (git-ignored)
+│   └── processed/
+│       ├── all_clean_for_ner.csv
+│       ├── relations_extraction.csv      # 98K extracted triples
+│       └── relations_llm_validated.csv   # 1.1K LLM-validated triples
+├── notebooks/
+│   ├── 1_load_data.ipynb                 # Multi-source ingestion + stratified sampling
+│   ├── 2_explore_data.ipynb              # EDA + noise profiling across 3 datasets
+│   ├── 3_preprocessing.ipynb             # 9-step custom cleaning pipeline
+│   ├── 4_ner_extraction.ipynb            # Hybrid NER (spaCy + EntityRuler + regex)
+│   ├── 5_relation_extraction.ipynb       # Triple extraction with typed confidence scores
+│   ├── 6_relation_cleaning.ipynb         # Dedup + Llama-3.1 LLM validation loop
+│   └── 7_neo4j_RAG.ipynb                 # Graph loading + GraphRAG chatbot
+└── docs/
+    └── images/                           # Diagrams and demo screenshots
 ```
-
-Run notebooks in order:
-`1_load_data` → `2_explore_data` → `3_preprocessing` → `4_ner_extraction` → `5_relation_extraction` → `6_relation_cleaning` → `7_neo4j_RAG`
 
 ---
 
 ## 🔮 Roadmap
 
-The pipeline is production-ready for static knowledge graphs. Three directions for extension:
+The pipeline is production-ready for static knowledge graphs. Five directions for extension:
 
-- **Domain adaptation** — fine-tune NER on annotated telecom data for higher entity recall
-- **Temporal reasoning** — extend ontology with time-indexed relations (e.g. *issue resolved on date*)
+- **Domain-adapted NER** — fine-tune spaCy on annotated telecom data for higher entity recall
+- **Temporal reasoning** — extend the ontology with time-indexed relations (e.g. *issue resolved on date*)
 - **Retrieval benchmarking** — head-to-head GraphRAG vs vanilla vector RAG on a held-out Q&A evaluation set
 - **Graph intelligence** — community detection (Louvain) to surface issue clusters, plus Node2Vec embeddings for similarity-based retrieval
-- **Interactive demo** — Streamlit or Gradio frontend so non-technical users can query the graph
+- **Confidence calibration** — analyze the precision/recall tradeoff of the LLM-validation threshold across multiple operating points
 
 ---
 
@@ -369,23 +373,23 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-### 🎓 About This Project
-
-This project explores **knowledge graphs**, **LLM-in-the-loop validation**, and **faithful RAG** —
-demonstrating how structured extraction can produce chatbots that *know what they don't know*.
-
-<br>
-
-**Made with 💜 by Gheffari Nour El Houda**
+### Built by **Gheffari Nour El Houda**
 
 <sub>Master 2 Data Science & NLP · AI Engineer</sub>
 
-<br>
+<br/>
 
-<sub>spaCy · Neo4j · LangChain · HuggingFace · Llama 3.1 · NetworkX · OWL</sub>
+<sub><i>This project explores knowledge graphs, LLM-in-the-loop validation, and faithful RAG —<br/>
+demonstrating how structured extraction can produce chatbots that</i> <strong>know what they don't know.</strong></sub>
 
-<br>
+<br/>
+<br/>
 
-<sub>If you found this useful, consider giving the repo a ⭐</sub>
+<sub>spaCy · Neo4j · LangChain · HuggingFace · Llama 3.1 · NetworkX · Streamlit · OWL</sub>
+
+<br/>
+<br/>
+
+<sub>⭐ <i>If you found this useful, consider giving the repo a star</i></sub>
 
 </div>
