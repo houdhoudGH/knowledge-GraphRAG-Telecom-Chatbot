@@ -1,0 +1,24 @@
+doc_id,subject,subject_type,relation,object,object_type,evidence_text,confidence,extraction_method,source,llm_valid,llm_confidence,valid,error,final_confidence
+1001,TICKET,TICKET,REPORTED_VIA,email,CHANNEL,The customer reported the issue via email and received a ticket confirmation within minutes.,0.94,dep_rule,demo,True,0.94,True,,0.94
+1002,TICKET,TICKET,REPORTED_VIA,email,CHANNEL,An email was sent to support@unionmobile.com to open a new ticket for the billing dispute.,0.93,dep_rule,demo,True,0.93,True,,0.93
+1003,TICKET,TICKET,REPORTED_VIA,phone call,CHANNEL,The ticket was opened during a phone call to the customer support hotline.,0.91,dep_rule,demo,True,0.91,True,,0.91
+1004,TICKET,TICKET,REPORTED_VIA,chat,CHANNEL,Tickets are also frequently opened through the live chat widget on the company website.,0.90,dep_rule,demo,True,0.90,True,,0.90
+2001,TICKET,TICKET,ESCALATED_TO,Jettie,AGENT,The ticket was escalated to Jettie from the Union Mobile support team for further investigation.,0.95,dep_rule,demo,True,0.95,True,,0.95
+2002,TICKET,TICKET,ESCALATED_TO,Paulo,AGENT,Paulo from Union Mobile took over the escalated ticket and resolved the connectivity issue.,0.94,dep_rule,demo,True,0.94,True,,0.94
+2003,TICKET,TICKET,ESCALATED_TO,Cordia,AGENT,Cordia handled the escalated case after the first-tier agent could not resolve it.,0.92,dep_rule,demo,True,0.92,True,,0.92
+2004,TICKET,TICKET,ESCALATED_TO,Union Mobile,TEAM,All unresolved tier-1 tickets are escalated to the Union Mobile specialist team.,0.96,dep_rule,demo,True,0.96,True,,0.96
+2005,Jettie,AGENT,MEMBER_OF,Union Mobile,TEAM,Jettie is a senior agent in the Union Mobile escalation team.,0.93,dep_rule,demo,True,0.93,True,,0.93
+2006,Paulo,AGENT,MEMBER_OF,Union Mobile,TEAM,Paulo joined the Union Mobile escalation team in March.,0.92,dep_rule,demo,True,0.92,True,,0.92
+3001,CUSTOMER,CUSTOMER,HAS_DEVICE,Samsung Galaxy S21,DEVICE,The customer reported the issue while using their Samsung Galaxy S21.,0.94,dep_rule,demo,True,0.94,True,,0.94
+3002,CUSTOMER,CUSTOMER,HAS_DEVICE,Samsung Galaxy S21,DEVICE,The Samsung Galaxy S21 dropped the call during the support session.,0.93,dep_rule,demo,True,0.93,True,,0.93
+3003,CUSTOMER,CUSTOMER,HAS_DEVICE,Samsung Galaxy S21,DEVICE,Customer confirmed the streaming issue happens consistently on the Samsung Galaxy S21.,0.92,dep_rule,demo,True,0.92,True,,0.92
+3004,CUSTOMER,CUSTOMER,HAS_DEVICE,iPhone 13,DEVICE,The customer is using an iPhone 13 with the latest iOS update.,0.91,dep_rule,demo,True,0.91,True,,0.91
+3005,CUSTOMER,CUSTOMER,HAS_DEVICE,iPhone 13,DEVICE,Customer's iPhone 13 lost network coverage in the downtown area.,0.90,dep_rule,demo,True,0.90,True,,0.90
+3006,CUSTOMER,CUSTOMER,HAS_DEVICE,router,DEVICE,The home router was replaced after repeated disconnection issues.,0.91,dep_rule,demo,True,0.91,True,,0.91
+3007,CUSTOMER,CUSTOMER,HAS_DEVICE,SIM card,DEVICE,A new SIM card was issued to restore service on the customer's line.,0.90,dep_rule,demo,True,0.90,True,,0.90
+4001,ISSUE,ISSUE,AFFECTS_DEVICE,Samsung Galaxy S21,DEVICE,Streaming on Netflix repeatedly fails on the Samsung Galaxy S21.,0.93,dep_rule,demo,True,0.93,True,,0.93
+4002,ISSUE,ISSUE,AFFECTS_DEVICE,Samsung Galaxy S21,DEVICE,The customer cannot watch shows on streaming services with the Samsung Galaxy S21.,0.92,dep_rule,demo,True,0.92,True,,0.92
+4003,ISSUE,ISSUE,LOCATED_AT,Berlin,LOCATION,The streaming issue was reported by a customer located in Berlin Germany.,0.93,dep_rule,demo,True,0.93,True,,0.93
+4004,ISSUE,ISSUE,LOCATED_AT,Berlin,LOCATION,The same Netflix loading problem occurred again while the customer was in Berlin.,0.91,dep_rule,demo,True,0.91,True,,0.91
+5001,ACCOUNT,ACCOUNT,HAS_BILLING_AMOUNT,500,AMOUNT,The total monthly billing amount on the account was 500 dollars including roaming.,0.94,dep_rule,demo,True,0.94,True,,0.94
+5002,ACCOUNT,ACCOUNT,HAS_BILLING_AMOUNT,30,AMOUNT,A 30 dollar late fee was added to the account this billing cycle.,0.92,dep_rule,demo,True,0.92,True,,0.92
