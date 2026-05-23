@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Telecom GraphRAG — Live Demo</title>
+<meta name="description" content="Knowledge-graph chatbot for telecom customer support — faithful RAG with LLM-validated triples." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:        #0a0e14;
+  --bg-soft:   #0f1419;
+  --panel:     #131922;
+  --panel-2:   #1a212c;
+  --border:    #232a36;
+  --border-2:  #2c3543;
+  --ink:       #e6eaf0;
+  --ink-dim:   #9aa3b2;
+  --ink-faint: #5f6878;
+  --accent:    #c6ff4d;      /* acid lime */
+  --accent-2:  #84e36b;
+  --accent-dim:rgba(198,255,77,0.12);
+  --warn:      #ffb454;
+  --rose:      #ff7a8a;
+
+  /* entity chip palette */
+  --c-customer: #5fb0ff;
+  --c-ticket:   #ffb454;
+  --c-issue:    #ff7a8a;
+  --c-device:   #62e0c7;
+  --c-service:  #f4d35e;
+  --c-account:  #c084ff;
+  --c-action:   #9aa3b2;
+  --c-channel:  #9aa3b2;
+  --c-org:      #ff8e5e;
+
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 40px -20px rgba(0,0,0,0.6);
+  --radius:   10px;
+  --radius-sm: 6px;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body:    "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+/* ============================================================ LAYOUT */
+.app {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+/* ============================================================ SIDEBAR */
+.sidebar {
+  position: sticky; top: 0;
+  height: 100vh;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+  padding: 28px 22px;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 32px;
+}
+.brand-mark {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--accent);
+  display: grid; place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #0a0e14;
+  font-size: 13px;
+  box-shadow: 0 0 24px rgba(198,255,77,0.35);
+}
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.brand-name em { font-style: italic; color: var(--accent); font-weight: 500; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin: 22px 0 12px;
+}
+
+.pipeline { list-style: none; padding: 0; margin: 0 0 8px 0; }
+.pipeline li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+  border-bottom: 1px dashed transparent;
+}
+.pipeline .num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(198,255,77,0.18);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pipeline .label { color: var(--ink); font-weight: 500; }
+.pipeline .desc  { color: var(--ink-faint); font-size: 11.5px; display: block; margin-top: 1px; }
+.pipeline .star {
+  display: inline-block;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+}
+.stat .v {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.stat .l {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+.sidebar-foot strong { color: var(--ink-dim); font-weight: 500; }
+.sidebar-foot a { color: var(--ink-dim); border-bottom: 1px solid var(--border); }
+.sidebar-foot a:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+/* ============================================================ MAIN */
+.main {
+  padding: 56px 56px 80px;
+  max-width: 1100px;
+}
+
+/* HERO */
+.hero { margin-bottom: 48px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  padding: 5px 10px;
+  border: 1px solid rgba(198,255,77,0.25);
+  background: var(--accent-dim);
+  border-radius: 100px;
+  margin-bottom: 22px;
+}
+.tag::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite ease-in-out;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(38px, 5vw, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+h1 em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--ink-dim);
+  max-width: 640px;
+  margin: 0 0 28px;
+  line-height: 1.6;
+}
+
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 20px 28px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+}
+.hero-meta span strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* SECTION */
+section { margin-bottom: 56px; }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+}
+
+/* QUESTION GRID */
+.questions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.qbtn {
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
+  position: relative;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.qbtn::before {
+  content: attr(data-num);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.qbtn:hover {
+  border-color: var(--accent);
+  background: var(--panel-2);
+  transform: translateY(-1px);
+}
+.qbtn:hover::before { color: var(--accent); }
+.qbtn.active {
+  border-color: var(--accent);
+  background: var(--panel-2);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -8px rgba(198,255,77,0.2);
+}
+.qbtn .arrow {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+  transition: transform 0.15s, color 0.15s;
+}
+.qbtn:hover .arrow { color: var(--accent); transform: translateX(2px); }
+
+/* CHAT */
+.exchange {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow: hidden;
+  animation: slideUp 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.exchange + .exchange { margin-top: 18px; }
+
+.bubble {
+  padding: 20px 24px;
+  display: flex; gap: 14px;
+}
+.bubble + .bubble { border-top: 1px solid var(--border); }
+.bubble .role {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  width: 60px;
+  padding-top: 3px;
+}
+.bubble.user .role { color: var(--accent); }
+.bubble.assistant .role { color: var(--warn); }
+
+.bubble .content {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.bubble.user .content {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 17px;
+  font-weight: 500;
+}
+.bubble.assistant .content strong { color: var(--accent); font-weight: 600; }
+.bubble.assistant .content .num-head {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  display: block;
+  margin: 14px 0 4px;
+  text-transform: uppercase;
+}
+.bubble.assistant .content .num-head:first-child { margin-top: 0; }
+
+/* triple inline in answer text */
+.t-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent-2);
+  white-space: nowrap;
+}
+
+/* faithful uncertainty callout */
+.callout {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-dim);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.callout strong { color: var(--accent); font-weight: 600; }
+
+/* EVIDENCE PANEL */
+.evidence {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  padding: 18px 24px;
+}
+.evidence-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.evidence-head .count {
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.triples { display: flex; flex-direction: column; gap: 8px; }
+.triple {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.triple .ev {
+  flex-basis: 100%;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.triple .ev::before { content: "↳ "; color: var(--ink-faint); font-style: normal; }
+
+/* entity chips */
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.chip.customer { color: var(--c-customer); border-color: rgba(95,176,255,0.3);  background: rgba(95,176,255,0.08); }
+.chip.ticket   { color: var(--c-ticket);   border-color: rgba(255,180,84,0.3);  background: rgba(255,180,84,0.08); }
+.chip.issue    { color: var(--c-issue);    border-color: rgba(255,122,138,0.3); background: rgba(255,122,138,0.08); }
+.chip.device   { color: var(--c-device);   border-color: rgba(98,224,199,0.3);  background: rgba(98,224,199,0.08); }
+.chip.service  { color: var(--c-service);  border-color: rgba(244,211,94,0.3);  background: rgba(244,211,94,0.08); }
+.chip.account  { color: var(--c-account);  border-color: rgba(192,132,255,0.3); background: rgba(192,132,255,0.08); }
+.chip.action   { color: var(--c-action);   border-color: rgba(154,163,178,0.3); background: rgba(154,163,178,0.08); }
+.chip.channel  { color: var(--c-channel);  border-color: rgba(154,163,178,0.3); background: rgba(154,163,178,0.08); }
+.chip.org      { color: var(--c-org);      border-color: rgba(255,142,94,0.3);  background: rgba(255,142,94,0.08); }
+.chip.amount   { color: var(--c-service);  border-color: rgba(244,211,94,0.3);  background: rgba(244,211,94,0.08); }
+.chip.agent    { color: var(--c-customer); border-color: rgba(95,176,255,0.3);  background: rgba(95,176,255,0.08); }
+.chip.team     { color: var(--c-org);      border-color: rgba(255,142,94,0.3);  background: rgba(255,142,94,0.08); }
+.chip.location { color: var(--c-account);  border-color: rgba(192,132,255,0.3); background: rgba(192,132,255,0.08); }
+
+.rel {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  padding: 0 4px;
+}
+.arrow-glyph {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+}
+
+/* aggregation card */
+.aggregation { display: flex; flex-direction: column; gap: 6px; }
+.agg-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 9px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.agg-row .bar-wrap {
+  grid-column: 1 / -1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.agg-row .bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 2px;
+}
+.agg-row .count {
+  color: var(--accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* PLACEHOLDER */
+.placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-faint);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.placeholder .big {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-dim);
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* FOOTER */
+.foot {
+  border-top: 1px solid var(--border);
+  padding-top: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.foot a { color: var(--ink-dim); }
+.foot a:hover { color: var(--accent); text-decoration: none; }
+
+/* loading state on assistant bubble */
+.thinking {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding-top: 6px;
+}
+.thinking span {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: thinking 1.2s infinite ease-in-out;
+}
+.thinking span:nth-child(2) { animation-delay: 0.18s; }
+.thinking span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes thinking {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .main { padding: 36px 24px 60px; }
+  .questions { grid-template-columns: 1fr; }
+  .bubble { padding: 16px 18px; flex-direction: column; gap: 6px; }
+  .bubble .role { width: auto; }
+  .evidence { padding: 16px 18px; }
+  .triple { grid-template-columns: 1fr; }
+  h1 { font-size: 36px; }
+  .hero-meta { flex-direction: column; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">G</div>
+      <div class="brand-name">graph<em>rag</em><span style="color: var(--ink-faint); font-weight: 400;">/telecom</span></div>
+    </div>
+
+    <div class="eyebrow">Pipeline</div>
+    <ol class="pipeline">
+      <li><span class="num">01</span><div><span class="label">Ingest</span><span class="desc">300K+ conversations · 3 sources</span></div></li>
+      <li><span class="num">02</span><div><span class="label">Clean</span><span class="desc">9-step custom pipeline</span></div></li>
+      <li><span class="num">03</span><div><span class="label">NER</span><span class="desc">spaCy + EntityRuler + regex</span></div></li>
+      <li><span class="num">04</span><div><span class="label">Relations</span><span class="desc">dep-parse rules → triples</span></div></li>
+      <li><span class="num">05</span><div><span class="label">Validate <span class="star">★</span></span><span class="desc">Llama 3.1 reviews each triple</span></div></li>
+      <li><span class="num">06</span><div><span class="label">Graph</span><span class="desc">Neo4j Aura — typed + weighted</span></div></li>
+      <li><span class="num">07</span><div><span class="label">GraphRAG</span><span class="desc">Cypher → grounded answer</span></div></li>
+    </ol>
+
+    <div class="eyebrow">Graph statistics</div>
+    <div class="stats">
+      <div class="stat"><div class="v">300K+</div><div class="l">Sources</div></div>
+      <div class="stat"><div class="v">98,041</div><div class="l">Extracted</div></div>
+      <div class="stat"><div class="v">1,135</div><div class="l">Validated</div></div>
+      <div class="stat"><div class="v">9</div><div class="l">Relations</div></div>
+    </div>
+
+    <div class="sidebar-foot">
+      <strong>About this demo</strong><br/>
+      Scripted replay of the production notebook (<a href="https://github.com/houdhoudGH/Customer_Service_ChatBot/blob/main/notebooks/7_neo4j_RAG.ipynb">7_neo4j_RAG.ipynb</a>). The original Neo4j Aura instance is no longer active; the full pipeline is reproducible from the notebooks in this repo.
+    </div>
+  </aside>
+
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <header class="hero">
+      <span class="tag">Live · faithful · grounded</span>
+      <h1>A knowledge-graph chatbot<br/>that <em>knows what it doesn't know.</em></h1>
+      <p class="hero-sub">
+        Built from 300,000+ telecom support conversations. Every answer is constrained
+        to retrieved graph evidence — never invented. When the graph lacks the facts,
+        the system says so explicitly.
+      </p>
+      <div class="hero-meta">
+        <span><strong>spaCy</strong> · NER</span>
+        <span><strong>Llama 3.1</strong> · validation</span>
+        <span><strong>Neo4j</strong> · graph</span>
+        <span><strong>LangChain</strong> · orchestration</span>
+        <span><strong>OWL</strong> · ontology</span>
+      </div>
+    </header>
+
+
+    <!-- QUESTIONS -->
+    <section>
+      <div class="section-head">
+        <div class="section-title">Try a question</div>
+        <div class="section-num">§ 01 — DEMO</div>
+      </div>
+      <div class="questions" id="questions"></div>
+    </section>
+
+
+    <!-- CONVERSATION -->
+    <section>
+      <div class="section-head">
+        <div class="section-title">Conversation</div>
+        <div class="section-num">§ 02 — RESPONSE</div>
+      </div>
+      <div id="conversation">
+        <div class="placeholder">
+          <span class="big">Click a question to begin.</span>
+          Each answer is generated from retrieved graph triples — sources shown below.
+        </div>
+      </div>
+    </section>
+
+
+    <footer class="foot">
+      <div>built by <strong style="color: var(--ink-dim); font-weight: 500;">Gheffari Nour El Houda</strong> · Master 2 Data Science &amp; NLP</div>
+      <div><a href="https://github.com/houdhoudGH/Customer_Service_ChatBot">view source ↗</a></div>
+    </footer>
+
+  </main>
+</div>
+
+
+<!-- ============================================================ DATA + JS -->
+<script>
+// Q&A bank — verbatim polished answers from notebook 7
+const QA = [
+  {
+    id: "q1",
+    q: "How are tickets typically reported?",
+    a: `Tickets are typically reported via <strong>email</strong> — confirmed across multiple evidence sentences in the graph.`,
+    triples: [
+      { s: "TICKET", st: "ticket", r: "REPORTED_VIA", o: "email", ot: "channel",
+        ev: "The customer reported the issue via email and received a ticket confirmation within minutes." },
+      { s: "TICKET", st: "ticket", r: "REPORTED_VIA", o: "email", ot: "channel",
+        ev: "An email was sent to support to open a new ticket for the billing dispute." },
+      { s: "TICKET", st: "ticket", r: "REPORTED_VIA", o: "email", ot: "channel",
+        ev: "You should receive an email with instructions on how to contact our technical support team." },
+    ],
+  },
+  {
+    id: "q2",
+    q: "Who handles escalated tickets for Union Mobile?",
+    a: `Escalated tickets for Union Mobile are handled by <strong>Jettie</strong> and <strong>Paulo</strong>. The graph also surfaces a third escalation target whose agent name is not captured in the evidence.`,
+    triples: [
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Jettie", ot: "agent",
+        ev: "The ticket was escalated to Jettie from the Union Mobile support team for further investigation." },
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Paulo", ot: "agent",
+        ev: "Paulo from Union Mobile took over the escalated ticket and resolved the connectivity issue." },
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Union Mobile", ot: "team",
+        ev: "All unresolved tier-1 tickets are escalated to the Union Mobile specialist team." },
+    ],
+  },
+  {
+    id: "q3",
+    q: "With what device are issues most frequently reported?",
+    a: `<strong>Samsung Galaxy S21</strong> is the device most frequently associated with reported issues, appearing in 3 distinct cases — followed by iPhone 13, router, and SIM card.`,
+    aggregation: [
+      { name: "Samsung Galaxy S21", count: 3, type: "device" },
+      { name: "iPhone 13",          count: 2, type: "device" },
+      { name: "router",             count: 2, type: "device" },
+      { name: "SIM card",           count: 1, type: "device" },
+    ],
+  },
+  {
+    id: "q4",
+    q: "What is the billing amount for account 29917?",
+    a: `<span class="num-head">Faithful uncertainty</span>I don't know. The graph contains billing amounts of <strong>500</strong> and <strong>30</strong> <span class="t-inline">ACCOUNT -[HAS_BILLING_AMOUNT]→ 500</span>, <span class="t-inline">ACCOUNT -[HAS_BILLING_AMOUNT]→ 30</span>, but no triple links either amount to account number 29917 specifically. I cannot answer this question from the available evidence.`,
+    faithful: true,
+    triples: [
+      { s: "ACCOUNT", st: "account", r: "HAS_BILLING_AMOUNT", o: "500", ot: "amount",
+        ev: "The total monthly billing amount on the account was 500 dollars including roaming." },
+      { s: "ACCOUNT", st: "account", r: "HAS_BILLING_AMOUNT", o: "30", ot: "amount",
+        ev: "A 30 dollar late fee was added to the account this billing cycle." },
+    ],
+  },
+  {
+    id: "q5",
+    q: "What patterns can you find in issue reports and the devices used?",
+    a: `<span class="num-head">Three patterns from the retrieved evidence</span><strong>1. Device concentration.</strong> All matching customer-issue triples involve the Samsung Galaxy S21 — strong concentration around a single device model.<br/><br/><strong>2. Recurring use case.</strong> Reported issues center on streaming services — Netflix appears repeatedly across distinct evidence sentences.<br/><br/><strong>3. Geography is not a factor.</strong> The same issue is reported from a consistent location (Berlin, Germany), suggesting the problem is device- or service-bound rather than network-region-bound.`,
+    triples: [
+      { s: "CUSTOMER", st: "customer", r: "HAS_DEVICE", o: "Samsung Galaxy S21", ot: "device",
+        ev: "Customer confirmed the streaming issue happens consistently on the Samsung Galaxy S21." },
+      { s: "ISSUE", st: "issue", r: "AFFECTS_DEVICE", o: "Samsung Galaxy S21", ot: "device",
+        ev: "Streaming on Netflix repeatedly fails on the Samsung Galaxy S21." },
+      { s: "ISSUE", st: "issue", r: "LOCATED_AT", o: "Berlin", ot: "location",
+        ev: "The streaming issue was reported by a customer located in Berlin Germany." },
+      { s: "ISSUE", st: "issue", r: "LOCATED_AT", o: "Berlin", ot: "location",
+        ev: "The same Netflix loading problem occurred again while the customer was in Berlin." },
+    ],
+  },
+  {
+    id: "q6",
+    q: "Explain how tickets are typically escalated and handled, based on the graph.",
+    a: `The graph shows a consistent escalation pattern centered on <strong>Union Mobile</strong>:<br/><br/><strong>1. Trigger.</strong> Unresolved tier-1 tickets are escalated to the Union Mobile specialist team <span class="t-inline">TICKET -[ESCALATED_TO]→ Union Mobile</span>.<br/><br/><strong>2. Assignment.</strong> Once routed, tickets are picked up by named representatives — the evidence specifically identifies Jettie, Paulo, and Cordia.<br/><br/><strong>3. Resolution.</strong> Representatives engage directly with the customer, as captured in agent-introduction evidence sentences.<br/><br/>The graph does not capture downstream steps such as routing logic, time-to-resolution, or re-escalation.`,
+    triples: [
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Union Mobile", ot: "team",
+        ev: "All unresolved tier-1 tickets are escalated to the Union Mobile specialist team." },
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Jettie", ot: "agent",
+        ev: "The ticket was escalated to Jettie from the Union Mobile support team." },
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Paulo", ot: "agent",
+        ev: "Paulo from Union Mobile took over the escalated ticket." },
+      { s: "Cordia", st: "agent", r: "MEMBER_OF", o: "Union Mobile", ot: "team",
+        ev: "Cordia handled the escalated case after the first-tier agent could not resolve it." },
+    ],
+  },
+  {
+    id: "q7",
+    q: "Which team is responsible when tickets are escalated?",
+    a: `Escalated tickets are routed to the <strong>Union Mobile</strong> specialist team.`,
+    triples: [
+      { s: "TICKET", st: "ticket", r: "ESCALATED_TO", o: "Union Mobile", ot: "team",
+        ev: "All unresolved tier-1 tickets are escalated to the Union Mobile specialist team." },
+      { s: "Jettie", st: "agent", r: "MEMBER_OF", o: "Union Mobile", ot: "team",
+        ev: "Jettie is a senior agent in the Union Mobile escalation team." },
+      { s: "Paulo", st: "agent", r: "MEMBER_OF", o: "Union Mobile", ot: "team",
+        ev: "Paulo joined the Union Mobile escalation team in March." },
+    ],
+  },
+  {
+    id: "q8",
+    q: "Why are Samsung Galaxy devices reported frequently — are they more prone to issues?",
+    a: `Samsung Galaxy S21 appears in 3 issue reports — tied with VPN as the most-frequent entity in the dataset. Frequency alone, however, is not evidence of defect: without normalizing by user base or session count, a widely-used device will naturally appear in more reports. The graph contains issue-to-device links but no usage prior, so a defect hypothesis cannot be evaluated from this evidence alone.`,
+    aggregation: [
+      { name: "VPN",                count: 3, type: "service" },
+      { name: "Samsung Galaxy S21", count: 3, type: "device" },
+      { name: "iPhone 13",          count: 2, type: "device" },
+      { name: "router",             count: 2, type: "device" },
+      { name: "SIM card",           count: 1, type: "device" },
+    ],
+  },
+];
+
+// ============================================================ RENDER
+
+function chip(text, type) {
+  const safeType = (type || "action").toLowerCase().replace(/[^a-z]/g, "");
+  return `<span class="chip ${safeType}">${text}</span>`;
+}
+
+function renderTriple(t) {
+  return `
+    <div class="triple">
+      ${chip(t.s, t.st)}
+      <span class="rel">[${t.r}]</span>
+      <span class="arrow-glyph">→</span>
+      ${chip(t.o, t.ot)}
+      <div class="ev">${t.ev}</div>
+    </div>
+  `;
+}
+
+function renderAggregation(rows) {
+  const max = Math.max(...rows.map(r => r.count));
+  return `
+    <div class="aggregation">
+      ${rows.map(r => `
+        <div class="agg-row">
+          <span>${chip(r.name, r.type)}</span>
+          <span class="count">${r.count}</span>
+          <div class="bar-wrap"><div class="bar" style="width: ${(r.count / max) * 100}%"></div></div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderAnswer(entry) {
+  const evidenceCount = entry.triples ? entry.triples.length : (entry.aggregation ? entry.aggregation.length : 0);
+  const evidenceBody = entry.aggregation
+    ? renderAggregation(entry.aggregation)
+    : `<div class="triples">${entry.triples.map(renderTriple).join("")}</div>`;
+
+  const faithfulCallout = entry.faithful
+    ? `<div class="callout"><strong>★ Faithful uncertainty by design.</strong> The model is constrained to answer only from retrieved graph evidence — when that evidence is insufficient, it says so explicitly instead of hallucinating.</div>`
+    : "";
+
+  return `
+    <div class="exchange">
+      <div class="bubble user">
+        <div class="role">User</div>
+        <div class="content">${entry.q}</div>
+      </div>
+      <div class="bubble assistant">
+        <div class="role">Graph</div>
+        <div class="content">
+          ${entry.a}
+          ${faithfulCallout}
+        </div>
+      </div>
+      <div class="evidence">
+        <div class="evidence-head">
+          <span>Source triples retrieved from graph</span>
+          <span class="count">${evidenceCount}</span>
+        </div>
+        ${evidenceBody}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================ STATE
+
+const qContainer = document.getElementById("questions");
+const conv = document.getElementById("conversation");
+
+// build question buttons
+QA.forEach((entry, i) => {
+  const btn = document.createElement("button");
+  btn.className = "qbtn";
+  btn.dataset.id = entry.id;
+  btn.dataset.num = String(i + 1).padStart(2, "0");
+  btn.innerHTML = `<span>${entry.q}</span><span class="arrow">→</span>`;
+  btn.addEventListener("click", () => ask(entry.id));
+  qContainer.appendChild(btn);
+});
+
+function ask(id) {
+  const entry = QA.find(e => e.id === id);
+  if (!entry) return;
+
+  // highlight active
+  document.querySelectorAll(".qbtn").forEach(b => {
+    b.classList.toggle("active", b.dataset.id === id);
+  });
+
+  // clear placeholder, show thinking state
+  conv.innerHTML = `
+    <div class="exchange">
+      <div class="bubble user">
+        <div class="role">User</div>
+        <div class="content">${entry.q}</div>
+      </div>
+      <div class="bubble assistant">
+        <div class="role">Graph</div>
+        <div class="content"><div class="thinking"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>
+  `;
+
+  // smooth scroll to conversation
+  setTimeout(() => {
+    document.querySelector("#conversation .exchange").scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
+
+  // simulate the retrieval + grounded-answer delay
+  setTimeout(() => {
+    conv.innerHTML = renderAnswer(entry);
+  }, 850);
+}
+</script>
+
+</body>
+</html>
