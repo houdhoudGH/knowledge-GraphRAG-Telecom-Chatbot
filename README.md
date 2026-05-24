@@ -33,7 +33,7 @@ This project pulls those hidden relationships out into a **typed knowledge graph
 Ask the graph anything. It retrieves the relevant triples, hands them to an LLM, and the LLM gives you a synthesized answer — with the source evidence shown below so you can verify the grounding yourself.
 
 <div align="center">
-  <img src="docs/images/demo_landing.png" width="92%" alt="Streamlit app — landing page"/>
+  <img src="docs\images\image.png" width="92%" alt="Streamlit app — landing page"/>
   <br/>
   <sub><i>Project pipeline in the sidebar; suggested questions in the main panel.</i></sub>
 </div>
@@ -41,7 +41,7 @@ Ask the graph anything. It retrieves the relevant triples, hands them to an LLM,
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_device.png" width="92%" alt="Aggregation query — device frequency"/>
+  <img src="docs\images\image copy.png" width="92%" alt="Aggregation query — device frequency"/>
   <br/>
   <sub><i><b>Aggregation across thousands of triples</b> — the LLM surfaces which device is most associated with reported issues, with raw graph counts as verifiable evidence.</i></sub>
 </div>
@@ -49,7 +49,7 @@ Ask the graph anything. It retrieves the relevant triples, hands them to an LLM,
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_patterns.png" width="92%" alt="Pattern detection across the graph"/>
+  <img src="docs\images\image copy 4.png" width="92%" alt="Pattern detection across the graph"/>
   <br/>
   <sub><i><b>Hidden pattern discovery</b> — the LLM reads the retrieved subgraph and reports back three patterns a human would have needed hours of EDA to find: device concentration, recurring use case, geographic neutrality.</i></sub>
 </div>
@@ -57,7 +57,7 @@ Ask the graph anything. It retrieves the relevant triples, hands them to an LLM,
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_escalation.png" width="92%" alt="Long-form reasoning across the graph"/>
+  <img src="docs\images\image copy 3.png" width="92%" alt="Long-form reasoning across the graph"/>
   <br/>
   <sub><i><b>End-to-end process reconstruction</b> — the LLM traces an entire escalation workflow from disconnected graph fragments, and explicitly flags what the schema does not yet capture.</i></sub>
 </div>
