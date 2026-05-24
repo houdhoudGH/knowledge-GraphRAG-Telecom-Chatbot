@@ -2,9 +2,7 @@
 
 # 🕸️ Telecom GraphRAG
 
-### *A faithful knowledge-graph chatbot for telecom customer support*
-
-From **300,000+ raw conversations** → typed entities → LLM-validated triples → Neo4j knowledge graph → grounded chatbot answers.
+### *Mining hidden relationships from 300K customer conversations — and asking an LLM to explain what it sees.*
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![spaCy](https://img.shields.io/badge/spaCy-NLP-09A3D5?style=flat-square)](https://spacy.io)
@@ -16,38 +14,26 @@ From **300,000+ raw conversations** → typed entities → LLM-validated triples
 
 <br/>
 
+Buried inside 300,000+ raw support conversations are answers no one has time to read: *which devices fail most, which teams really handle escalations, which issues recur in which cities.*
+This project pulls those hidden relationships out into a **typed knowledge graph** — then puts an **LLM on top of it as an analyst**, so you can ask the graph questions in plain English and get grounded, evidence-backed answers.
+**You don't read the graph. The graph reads itself for you.**
+
+<br/>
+
 <img src="docs/images/graph_clean.png" width="92%" alt="Telecom knowledge graph"/>
 
-<sub><i>Knowledge graph extracted from 300K+ telecom support conversations.<br/>
-Each node is a typed entity; each edge is an LLM-validated relation with confidence ≥ 0.90.</i></sub>
+<sub><i>Hidden dependencies surfaced from 300K+ telecom conversations — typed entities, labeled relations, every edge validated by an LLM with confidence ≥ 0.90.</i></sub>
 
 </div>
 
 ---
 
-## ✨ Why This Project Stands Out
-
-Most chatbot projects fine-tune an LLM on FAQ pairs and call it a day. This one does something genuinely different — it builds a **structured semantic graph** from raw conversations, then uses that graph as the only source of truth the chatbot is allowed to consult.
-
-| | Most RAG projects | **This project** |
-|---|---|---|
-| Knowledge representation | Opaque embeddings | **Typed nodes + labeled relations** |
-| Provenance | Lost after chunking | **Every fact traces to a source sentence** |
-| Hallucination handling | "Best-effort" answers | **Explicit *"I don't know"* when evidence is missing** |
-| Validation | None | **LLM-in-the-loop reviews every triple before insertion** |
-| Schema | Ad-hoc | **Formal OWL ontology** |
-| Data sources | Single dataset | **3 heterogeneous telecom datasets unified** |
-
-The novelty isn't any single component — it's the **end-to-end discipline**: every triple is typed, validated, scored, and traceable to the sentence it came from.
-
----
-
 ## 🎬 Live Demo
 
-A local Streamlit app loads the validated triples and lets you query the graph through a chat interface. Source triples are shown below each answer so you can verify the grounding yourself.
+Ask the graph anything. It retrieves the relevant triples, hands them to an LLM, and the LLM gives you a synthesized answer — with the source evidence shown below so you can verify the grounding yourself.
 
 <div align="center">
-  <img src="docs\images\image.png" width="92%" alt="Streamlit app — landing page"/>
+  <img src="docs/images/demo_landing.png" width="92%" alt="Streamlit app — landing page"/>
   <br/>
   <sub><i>Project pipeline in the sidebar; suggested questions in the main panel.</i></sub>
 </div>
@@ -55,34 +41,67 @@ A local Streamlit app loads the validated triples and lets you query the graph t
 <br/>
 
 <div align="center">
-  <img src="docs\images\image copy.png" width="92%" alt="Aggregation query — device frequency"/>
+  <img src="docs/images/demo_device.png" width="92%" alt="Aggregation query — device frequency"/>
   <br/>
-  <sub><i><b>Aggregation</b> — the system counts device co-occurrences across the graph and returns the most frequent, with raw counts visible as source evidence.</i></sub>
+  <sub><i><b>Aggregation across thousands of triples</b> — the LLM surfaces which device is most associated with reported issues, with raw graph counts as verifiable evidence.</i></sub>
 </div>
 
 <br/>
 
 <div align="center">
-  <img src="docs\images\image copy 4.png" width="92%" alt="Pattern detection across triples"/>
+  <img src="docs/images/demo_patterns.png" width="92%" alt="Pattern detection across the graph"/>
   <br/>
-  <sub><i><b>Analytical reasoning</b> — the system synthesizes patterns across multiple retrieved triples (device concentration, recurring use case, geography).</i></sub>
+  <sub><i><b>Hidden pattern discovery</b> — the LLM reads the retrieved subgraph and reports back three patterns a human would have needed hours of EDA to find: device concentration, recurring use case, geographic neutrality.</i></sub>
 </div>
 
 <br/>
 
 <div align="center">
-  <img src="docs\images\image copy 3.png" width="92%" alt="Long-form reasoning over the graph"/>
+  <img src="docs/images/demo_escalation.png" width="92%" alt="Long-form reasoning across the graph"/>
   <br/>
-  <sub><i><b>Long-form reasoning</b> — multi-step process explained from graph evidence, with explicit acknowledgement of what the schema does not capture.</i></sub>
+  <sub><i><b>End-to-end process reconstruction</b> — the LLM traces an entire escalation workflow from disconnected graph fragments, and explicitly flags what the schema does not yet capture.</i></sub>
 </div>
 
-> ⭐ **Faithful uncertainty by design.** When the graph lacks the evidence to answer a question, the chatbot says *"I don't know"* and lists the facts it actually has — instead of confidently hallucinating. This is the single most important property of the system.
+---
+
+## 🧬 The Core Idea
+
+Raw text is unstructured. Sales meetings, customer calls, support tickets, complaint logs — all of it sits in massive piles that nobody reads end-to-end. Inside those piles are real signals:
+
+- *Which products keep breaking together?*
+- *Which agents handle which kinds of escalations?*
+- *Are issues geographic or device-specific?*
+- *Which billing problems map to which service tiers?*
+
+Traditional analytics requires you to **already know what to look for**. Vanilla RAG with embeddings can find similar passages but it cannot tell you *how things connect*. This project takes a different route:
+
+> **Step 1 — Convert text into a graph.** Every entity (customer, device, issue, agent, account) becomes a typed node. Every relationship found in the text becomes a labeled edge with the original source sentence preserved as evidence. This turns scattered language into queryable structure.
+>
+> **Step 2 — Validate the graph with an LLM.** A rule-based extractor will pick up garbage. So every candidate triple is reviewed by Llama-3.1 before insertion — the LLM can fix it, normalize it, or reject it. Only triples passing `valid=True` AND `confidence ≥ 0.90` enter the final graph.
+>
+> **Step 3 — Use the LLM as the analyst.** When you ask a question, the system retrieves the relevant subgraph and hands it to the LLM along with strict grounding instructions. The LLM reads the graph, finds the pattern, and explains it in plain English. **You never have to look at the graph itself.**
+
+The result is a system that **discovers relationships you didn't know were there** — and surfaces them as readable insights.
+
+---
+
+## ✨ Why This Project Stands Out
+
+|                          | Most RAG projects                            | **This project**                                            |
+|--------------------------|----------------------------------------------|-------------------------------------------------------------|
+| Knowledge representation | Opaque embeddings                            | **Typed nodes + labeled relations**                         |
+| What it surfaces         | Semantically similar passages                | **Structural relationships, dependencies, recurring patterns** |
+| Provenance               | Lost after chunking                          | **Every fact traces back to a source sentence**             |
+| Hallucination handling   | "Best-effort" answers                        | **Explicit *"I don't know"* when graph evidence is missing** |
+| Validation               | None                                         | **LLM reviews every triple before it enters the graph**     |
+| Schema                   | Ad-hoc                                       | **Formal OWL ontology — 9 classes, 14 object properties**   |
+| Data sources             | Single dataset                               | **3 heterogeneous telecom datasets unified into one graph** |
+
+The novelty isn't any single component — it's the **end-to-end discipline**: every triple is typed, validated, scored, and traceable. The LLM is constrained to act as a reader of graph evidence, not a free-form text generator.
 
 ---
 
 ## 🗺️ The Pipeline
-
-Six stages, each fully reproducible from the notebooks in this repo.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
@@ -102,8 +121,9 @@ Six stages, each fully reproducible from the notebooks in this repo.
               └───────────┬───────────┘
                           ▼
               ┌───────────────────────┐
-              │  3. Relations         │  dependency-parse rules
-              │                       │  → (s, r, o) + confidence
+              │  3. Relation Mining   │  dependency-parse rules
+              │                       │  → (subject, relation, object)
+              │                       │  with confidence scores
               └───────────┬───────────┘
                           ▼
               ┌───────────────────────┐
@@ -118,25 +138,26 @@ Six stages, each fully reproducible from the notebooks in this repo.
               └───────────┬───────────┘
                           ▼
               ┌───────────────────────┐
-              │  6. GraphRAG Chat     │  Cypher retrieval +
-              │                       │  grounded LLM answer
+              │  6. GraphRAG Analyst  │  Cypher retrieval +
+              │                       │  LLM reads the subgraph
+              │                       │  and reports insights
               └───────────────────────┘
 ```
 
-**★ The LLM-in-the-loop validation stage** is the project's novel contribution — every extracted triple is reviewed by Llama-3.1 before insertion. The validator can fix, normalize, or reject triples, and only those passing a strict 0.90 confidence gate make it into the final graph.
+**★ The LLM-in-the-loop validation stage** is the project's novel contribution. The rule-based extractor produces ~98K candidate triples; the validator prunes them to ~1.1K high-confidence facts. **Aggressive precision was a deliberate design choice** — better a small graph the system can trust than a large graph full of noise.
 
 ---
 
 ## 🗂️ The Data
 
-Three heterogeneous telecom datasets unified into one coherent corpus:
+Three heterogeneous telecom datasets, unified into one coherent corpus:
 
-| Dataset | Records | Type | Content |
-|---|---|---|---|
-| **Talkmap Telecom** | 200,000 | Multi-turn dialogues | Customer-agent conversation transcripts |
-| **Comcast Complaints** | ~5,000 | Free-form text | Customer complaints with category labels |
-| **Bitext Customer Q&A** | 27,000 | Intent-labeled pairs | Instruction · response · intent · category |
-| **Total** | **~300K** | **Mixed** | |
+| Dataset              | Records   | Type                   | Content                                  |
+|----------------------|-----------|------------------------|------------------------------------------|
+| **Talkmap Telecom**  | 200,000   | Multi-turn dialogues   | Customer–agent conversation transcripts  |
+| **Comcast Complaints** | ~5,000  | Free-form text         | Customer complaints with category labels |
+| **Bitext Customer Q&A** | 27,000 | Intent-labeled pairs   | Instruction · response · intent · category |
+| **Total**            | **~300K** | **Mixed**              |                                          |
 
 A stratified 100K sample of Talkmap was used during development; the full 200K is available for production runs.
 
@@ -148,13 +169,13 @@ A stratified 100K sample of Talkmap was used during development; the full 200K i
 
 Systematic noise profiling across all three datasets revealed dataset-specific quirks that drove custom cleaning per source:
 
-| Noise type | Talkmap | Comcast | Bitext |
-|---|---|---|---|
-| URLs / links | ✅ frequent | rare | rare |
-| Emojis | ✅ frequent | rare | none |
-| Repeated tokens (*"to to to"*) | ✅ frequent | rare | none |
-| Parenthetical asides (*"(to self)"*) | ✅ frequent | none | none |
-| Non-ASCII garbage | ✅ frequent | occasional | rare |
+| Noise type                       | Talkmap     | Comcast    | Bitext |
+|----------------------------------|-------------|------------|--------|
+| URLs / links                     | ✅ frequent | rare       | rare   |
+| Emojis                           | ✅ frequent | rare       | none   |
+| Repeated tokens (*"to to to"*)   | ✅ frequent | rare       | none   |
+| Parenthetical asides (*"(to self)"*) | ✅ frequent | none    | none   |
+| Non-ASCII garbage                | ✅ frequent | occasional | rare   |
 
 A reusable `filter_by_pattern()` utility was built for fast regex-based inspection across millions of rows.
 
@@ -176,26 +197,26 @@ clean_pipeline = [
 ]
 ```
 
-All three sources unified into one clean CSV.
+All three sources unified into one clean CSV — the foundation for everything downstream.
 
 ### 3️⃣ Named Entity Recognition — `4_ner_extraction.ipynb`
 
-Hybrid NER combining spaCy's statistical model with hand-crafted deterministic rules:
+The first step toward turning text into a graph: find the **entities**. Hybrid NER combines spaCy's statistical model with hand-crafted deterministic rules for telecom-specific concepts:
 
-| Entity Type | Examples | Method |
-|---|---|---|
-| `SERVICE` | *data plan, broadband, roaming, voicemail* | EntityRuler patterns |
-| `PRODUCT` | *router, SIM card, iPhone, Android, modem* | EntityRuler patterns |
-| `ISSUE` | *no signal, billing issue, network outage* | EntityRuler patterns |
-| `ACTION` | *refund, reset, escalate, cancel, upgrade* | EntityRuler patterns |
-| `ACCOUNT_ID` | *AB-12345, JKL87654321* | Regex `[A-Z]{2,5}-?\d{4,}` |
-| `PHONE_NUMBER` | *+1-800-XXX-XXXX* | Regex (international formats) |
+| Entity Type    | Examples                                          | Method                |
+|----------------|---------------------------------------------------|-----------------------|
+| `SERVICE`      | *data plan, broadband, roaming, voicemail*        | EntityRuler patterns  |
+| `PRODUCT`      | *router, SIM card, iPhone, Android, modem*        | EntityRuler patterns  |
+| `ISSUE`        | *no signal, billing issue, network outage*        | EntityRuler patterns  |
+| `ACTION`       | *refund, reset, escalate, cancel, upgrade*        | EntityRuler patterns  |
+| `ACCOUNT_ID`   | *AB-12345, JKL87654321*                           | Regex `[A-Z]{2,5}-?\d{4,}` |
+| `PHONE_NUMBER` | *+1-800-XXX-XXXX*                                 | Regex (international) |
 
-GPU acceleration via `thinc.prefer_gpu()` for efficient batch processing.
+GPU acceleration via `thinc.prefer_gpu()` for efficient batch processing at scale.
 
-### 4️⃣ Relation Extraction — `5_relation_extraction.ipynb`
+### 4️⃣ Relation Mining — `5_relation_extraction.ipynb`
 
-Dependency-parse rules extract structured, fully-traceable triples:
+The crucial step: **finding how entities connect.** Dependency-parse-based rules walk every sentence looking for typed relationships between extracted entities. Each candidate is produced as a fully-traceable triple:
 
 ```json
 {
@@ -211,11 +232,11 @@ Dependency-parse rules extract structured, fully-traceable triples:
 }
 ```
 
-Typed entities, relation label, source sentence, confidence score, dataset origin — every triple is fully auditable.
+Typed entities, relation label, source sentence, confidence score, dataset origin — every triple in the graph is fully auditable. **This is what makes the system trustable: every claim points back to a real sentence in real data.**
 
 ### 5️⃣ LLM Validation — `6_relation_cleaning.ipynb` ⭐
 
-The novel stage. Every triple gets reviewed by Llama-3.1-8B-Instruct via LangChain:
+The novel stage. Rule-based extraction is fast but noisy. So **every candidate triple gets reviewed by Llama-3.1-8B-Instruct** via a LangChain validation chain:
 
 ```text
 You are a knowledge graph validation assistant.
@@ -228,11 +249,16 @@ Your task:
 Return ONLY valid JSON.
 ```
 
-**Quality gate:** only triples where `valid=True` AND `confidence ≥ 0.90` survive. The validator catches errors that the rule-based extractor cannot — semantic nonsense, mis-typed arguments, and ambiguous references.
+The LLM acts as a quality gate — catching errors the rule-based extractor cannot:
+- Semantic nonsense (e.g. *"ticket REPORTED_VIA ticket"*)
+- Mis-typed arguments (e.g. *VPN* labeled as a device when it's a service)
+- Ambiguous references and partial entity captures
 
-### 6️⃣ Neo4j Knowledge Graph — `7_neo4j_RAG.ipynb`
+**Quality gate:** only triples where `valid=True` AND `llm_confidence ≥ 0.90` survive. The threshold is deliberately strict — the goal is a *trustable* graph, not a *large* one.
 
-Validated triples loaded into **Neo4j Aura** with typed nodes and weighted edges:
+### 6️⃣ The Knowledge Graph — `7_neo4j_RAG.ipynb`
+
+Validated triples loaded into **Neo4j Aura** with typed node labels and confidence-weighted edges:
 
 ```cypher
 MERGE (a:Entity {name: $subject})
@@ -240,15 +266,15 @@ MERGE (b:Entity {name: $object})
 MERGE (a)-[rel:REPORTED {confidence: $conf}]->(b)
 ```
 
-Graph also exported to NetworkX for local statistical analysis and visualization.
+Once loaded, the graph **reveals patterns that were invisible in the raw text**: which devices co-occur with which issues, which agents handle which escalations, how billing amounts cluster across accounts. The graph is also exported to NetworkX for local visualization and statistical analysis.
 
-### 7️⃣ GraphRAG Chatbot — `7_neo4j_RAG.ipynb`
+### 7️⃣ GraphRAG as an Analyst — `7_neo4j_RAG.ipynb`
 
-A three-step retrieval-augmented generation chain:
+The chatbot doesn't generate answers — it **reads the graph and reports what it finds**. Three steps:
 
 1. **Question → Cypher** — natural language mapped to graph traversal
-2. **Graph → Context** — Neo4j returns relevant `(subject)-[relation]→(object)` triples
-3. **Context → Answer** — LLM generates a response grounded *strictly* in graph evidence
+2. **Graph → Context** — Neo4j returns relevant `(subject)-[relation]→(object)` triples + evidence sentences
+3. **Context → Insight** — the LLM is *strictly constrained* to answer from those triples
 
 ```python
 prompt = f"""
@@ -261,7 +287,7 @@ Question: {question}
 """
 ```
 
-The `Answer ONLY using these facts` constraint is what produces faithful, non-hallucinated responses — including the explicit *"I don't know"* when the graph lacks evidence.
+The `Answer ONLY using these facts` constraint is what produces **faithful, non-hallucinated insights** — including the explicit *"I don't know"* when the graph lacks evidence. The user gets the pattern; the LLM does the reading; the graph guarantees the truth.
 
 ---
 
@@ -273,7 +299,7 @@ The graph is backed by a formal **OWL ontology** (`ontology.owl`) that defines i
 - **Object Properties:** `hasIssue`, `requestedAction`, `usesService`, `reportedBy`, `escalatedTo`, `memberOf`
 - **Data Properties:** confidence scores, timestamps, source dataset, evidence text
 
-The ontology ensures the graph is semantically consistent, extensible, and interoperable with other knowledge systems.
+The ontology ensures the graph is semantically consistent, extensible, and interoperable with other knowledge systems — and it gives the LLM a stable vocabulary to reason about.
 
 ---
 
@@ -312,17 +338,17 @@ Run the notebooks in order:
 
 ## ⚙️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **NLP & NER** | spaCy `en_core_web_lg`, EntityRuler, custom regex |
-| **LLM Validation** | Llama-3.1-8B-Instruct (HuggingFace Inference API) |
-| **LLM Orchestration** | LangChain (`LLMChain`, `SequentialChain`, `PromptTemplate`) |
-| **Graph Database** | Neo4j Aura + `neo4j` Python driver |
-| **Graph Analysis** | NetworkX, Matplotlib |
-| **Data Processing** | Pandas, NumPy |
-| **GPU Acceleration** | CUDA via thinc / PyTorch |
-| **Ontology** | OWL / Protégé |
-| **Demo UI** | Streamlit |
+| Layer                    | Technology                                                        |
+|--------------------------|-------------------------------------------------------------------|
+| **NLP & NER**            | spaCy `en_core_web_lg`, EntityRuler, custom regex                 |
+| **LLM Validation**       | Llama-3.1-8B-Instruct (HuggingFace Inference API)                 |
+| **LLM Orchestration**    | LangChain (`LLMChain`, `SequentialChain`, `PromptTemplate`)       |
+| **Graph Database**       | Neo4j Aura + `neo4j` Python driver                                |
+| **Graph Analysis**       | NetworkX, Matplotlib                                              |
+| **Data Processing**      | Pandas, NumPy                                                     |
+| **GPU Acceleration**     | CUDA via thinc / PyTorch                                          |
+| **Ontology**             | OWL / Protégé                                                     |
+| **Demo UI**              | Streamlit                                                         |
 
 ---
 
@@ -344,9 +370,9 @@ Customer_Service_ChatBot/
 │   ├── 2_explore_data.ipynb              # EDA + noise profiling across 3 datasets
 │   ├── 3_preprocessing.ipynb             # 9-step custom cleaning pipeline
 │   ├── 4_ner_extraction.ipynb            # Hybrid NER (spaCy + EntityRuler + regex)
-│   ├── 5_relation_extraction.ipynb       # Triple extraction with typed confidence scores
+│   ├── 5_relation_extraction.ipynb       # Relation mining → typed triples
 │   ├── 6_relation_cleaning.ipynb         # Dedup + Llama-3.1 LLM validation loop
-│   └── 7_neo4j_RAG.ipynb                 # Graph loading + GraphRAG chatbot
+│   └── 7_neo4j_RAG.ipynb                 # Graph loading + GraphRAG analyst
 └── docs/
     └── images/                           # Diagrams and demo screenshots
 ```
@@ -358,10 +384,10 @@ Customer_Service_ChatBot/
 The pipeline is production-ready for static knowledge graphs. Five directions for extension:
 
 - **Domain-adapted NER** — fine-tune spaCy on annotated telecom data for higher entity recall
-- **Temporal reasoning** — extend the ontology with time-indexed relations (e.g. *issue resolved on date*)
-- **Retrieval benchmarking** — head-to-head GraphRAG vs vanilla vector RAG on a held-out Q&A evaluation set
-- **Graph intelligence** — community detection (Louvain) to surface issue clusters, plus Node2Vec embeddings for similarity-based retrieval
-- **Confidence calibration** — analyze the precision/recall tradeoff of the LLM-validation threshold across multiple operating points
+- **Temporal reasoning** — extend the ontology with time-indexed relations (e.g. *issue resolved on date*) to enable trend analysis
+- **Community detection** — Louvain clustering to surface natural issue groups and hidden subnetworks the LLM can summarize
+- **Graph embeddings** — Node2Vec embeddings for similarity-based retrieval, enabling *"find tickets like this one"* queries
+- **Retrieval benchmarking** — head-to-head comparison of GraphRAG vs. vanilla vector RAG on a held-out Q&A evaluation set
 
 ---
 
@@ -380,7 +406,8 @@ MIT — see [LICENSE](LICENSE) for details.
 <br/>
 
 <sub><i>This project explores knowledge graphs, LLM-in-the-loop validation, and faithful RAG —<br/>
-demonstrating how structured extraction can produce chatbots that</i> <strong>know what they don't know.</strong></sub>
+demonstrating how structured extraction can surface hidden patterns from unstructured text,<br/>
+and how an LLM can act as an analyst that</i> <strong>reads the graph so you don't have to.</strong></sub>
 
 <br/>
 <br/>
