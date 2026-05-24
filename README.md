@@ -47,7 +47,7 @@ The novelty isn't any single component — it's the **end-to-end discipline**: e
 A local Streamlit app loads the validated triples and lets you query the graph through a chat interface. Source triples are shown below each answer so you can verify the grounding yourself.
 
 <div align="center">
-  <img src="docs/images/demo_landing.png" width="92%" alt="Streamlit app — landing page"/>
+  <img src="docs\images\image.png" width="92%" alt="Streamlit app — landing page"/>
   <br/>
   <sub><i>Project pipeline in the sidebar; suggested questions in the main panel.</i></sub>
 </div>
@@ -55,7 +55,7 @@ A local Streamlit app loads the validated triples and lets you query the graph t
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_device.png" width="92%" alt="Aggregation query — device frequency"/>
+  <img src="docs\images\image copy.png" width="92%" alt="Aggregation query — device frequency"/>
   <br/>
   <sub><i><b>Aggregation</b> — the system counts device co-occurrences across the graph and returns the most frequent, with raw counts visible as source evidence.</i></sub>
 </div>
@@ -63,7 +63,7 @@ A local Streamlit app loads the validated triples and lets you query the graph t
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_patterns.png" width="92%" alt="Pattern detection across triples"/>
+  <img src="docs\images\image copy 4.png" width="92%" alt="Pattern detection across triples"/>
   <br/>
   <sub><i><b>Analytical reasoning</b> — the system synthesizes patterns across multiple retrieved triples (device concentration, recurring use case, geography).</i></sub>
 </div>
@@ -71,7 +71,7 @@ A local Streamlit app loads the validated triples and lets you query the graph t
 <br/>
 
 <div align="center">
-  <img src="docs/images/demo_escalation.png" width="92%" alt="Long-form reasoning over the graph"/>
+  <img src="docs\images\image copy 3.png" width="92%" alt="Long-form reasoning over the graph"/>
   <br/>
   <sub><i><b>Long-form reasoning</b> — multi-step process explained from graph evidence, with explicit acknowledgement of what the schema does not capture.</i></sub>
 </div>
